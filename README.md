@@ -26,7 +26,7 @@ _No external dependencies are required!_
 Clone the repository and integrate it into your project:
 
 ```bash
-git clone https://github.com/your_username/SMTP-Email-Sender.git
+git clone https://github.com/ErhanTurker01/SMTP-Email-Sender.git
 ```
 
 Alternatively, you can copy the source file into your project directory.

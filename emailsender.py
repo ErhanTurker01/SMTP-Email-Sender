@@ -66,7 +66,7 @@ class EmailSender:
         subject: str,
         cc: list[str] = None,
         html_content: str = None
-    ) -> None:
+    ):
         """
         Create a new email message.
         
@@ -74,6 +74,7 @@ class EmailSender:
         :param subject: The subject of the email.
         :param cc: Optional list of email addresses for CC.
         :param html_content: Optional HTML content to include as the body.
+        :return: self (for method chaining).
         """
         self.message = MIMEMultipart("mixed")
         self.message["From"] = self.sender
@@ -88,6 +89,7 @@ class EmailSender:
 
         if html_content:
             self.message.attach(MIMEText(html_content, "html"))
+        return self
     
     def attach(self, attachment: Union[MIMEText, MIMEBase]):
         """
@@ -102,7 +104,7 @@ class EmailSender:
         self.message.attach(attachment)
         return self
         
-    def sendmail(self):
+    def sendmail(self) -> None:
         """
         Send the email message. In debug mode, the email is not actually sent but its details are logged.
         

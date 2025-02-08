@@ -5,6 +5,9 @@ from email.mime.base import MIMEBase
 from email import encoders
 from email.utils import encode_rfc2231
 from typing import Union
+import logging
+
+logger = logging.getLogger(__name__)
 
 def email_text(text: str, format_type: str = "plain") -> MIMEText:
     """Create a MIMEText object for plain or HTML text."""
@@ -21,18 +24,20 @@ def email_file(path: str, attachment_file_name: str) -> MIMEBase:
     """
     try:
         with open(path, "rb") as f:
-            file = MIMEBase("application", "octet-stream")
-            file.set_payload(f.read())
-            encoders.encode_base64(file)
+            mime_file = MIMEBase("application", "octet-stream")
+            mime_file.set_payload(f.read())
+            encoders.encode_base64(mime_file)
 
             encoded_attachment_name = encode_rfc2231(attachment_file_name, charset="utf-8")
-            file.add_header(
+            mime_file.add_header(
                 "Content-Disposition",
                 f"attachment; filename*={encoded_attachment_name}"
             )
-    except FileNotFoundError:
-        raise ValueError(f"File {path} not found!")
-    return file
+    except FileNotFoundError as e:
+        msg = f"File '{path}' not found! Please verify the path and check file permissions."
+        logger.error(msg)
+        raise ValueError(msg) from e
+    return mime_file
 
 class EmailSender:
     def __init__(self, sender: str, password: str, debug: bool = False) -> None:
@@ -65,7 +70,6 @@ class EmailSender:
         receiver: str,
         subject: str,
         cc: list[str] = None,
-        html_content: str = None
     ):
         """
         Create a new email message.
@@ -73,7 +77,6 @@ class EmailSender:
         :param receiver: The primary recipient's email address.
         :param subject: The subject of the email.
         :param cc: Optional list of email addresses for CC.
-        :param html_content: Optional HTML content to include as the body.
         :return: self (for method chaining).
         """
         self.message = MIMEMultipart("mixed")
@@ -86,9 +89,7 @@ class EmailSender:
             self.message["Cc"] = ", ".join(cc)
 
         self.receiver = receiver
-
-        if html_content:
-            self.message.attach(MIMEText(html_content, "html"))
+        
         return self
     
     def attach(self, attachment: Union[MIMEText, MIMEBase]):
@@ -100,7 +101,9 @@ class EmailSender:
         :raises ValueError: If the message is not yet created.
         """
         if self.message is None:
-            raise ValueError("Message is not created!")
+            msg = "Message is not created! Please call create_message() before attaching content."
+            logger.error(msg)
+            raise ValueError(msg)
         self.message.attach(attachment)
         return self
         
@@ -111,7 +114,9 @@ class EmailSender:
         :raises ValueError: If the message is not created.
         """
         if self.message is None:
-            raise ValueError("Message is not created!")
+            msg = "Message is not created! Please create a message before sending."
+            logger.error(msg)
+            raise ValueError(msg)
         
         recipients = [self.receiver]
         if self.cc:
@@ -122,15 +127,17 @@ class EmailSender:
         
         try:
             if self.debug:
-                print(f"[DEBUG] Email would be sent to: {', '.join(recipients)}")
-                print("[DEBUG] Email content:")
+                logger.debug("Email would be sent to: %s", ", ".join(recipients))
+                logger.debug("Email content:\n%s", self.message.as_string())
                 print(self.message.as_string())
             else:
                 self.server.sendmail(self.sender, recipients, self.message.as_string())
-                print(f"E-mail successfully sent to {', '.join(recipients)}")
+                logger.info("E-mail successfully sent to %s", ", ".join(recipients))
             self.message = None
         except Exception as e:
-            print("An error occurred while sending email:", str(e))
+            msg = ("An error occurred while sending the email. "
+                   "Please check your network connection and ensure that the SMTP server is accessible.")
+            logger.error("%s Exception: %s", msg, str(e))
             self.errors.append(self.receiver)
     
     def finish(self):
@@ -138,7 +145,10 @@ class EmailSender:
         Finalize the email sending process, report any errors, and close the SMTP connection.
         """
         if not self.errors:
-            print("All mails sent successfully")
+            logger.info("All mails sent successfully")
         else:
-            print(f"Error occurred while sending to: {self.errors}")
-        self.server.quit()
+            logger.error("Errors occurred while sending emails to: %s", self.errors)
+        try:
+            self.server.quit()
+        except Exception as e:
+            logger.error("An error occurred while closing the SMTP connection: %s", e)

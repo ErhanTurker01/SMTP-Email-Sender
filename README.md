@@ -1,1 +1,1 @@
-# Gmail-Automatic-Email-Sender
+# SMTP-Email-Sender

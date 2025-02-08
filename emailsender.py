@@ -40,12 +40,23 @@ def email_file(path: str, attachment_file_name: str) -> MIMEBase:
     return mime_file
 
 class EmailSender:
-    def __init__(self, sender: str, password: str, debug: bool = False) -> None:
+    def __init__(
+        self,
+        sender: str,
+        password: str,
+        smtp_server: str,
+        smtp_port: int = 587,
+        use_tls: bool = True,
+        debug: bool = False
+    ) -> None:
         """
-        Initialize the EmailSender by connecting to the Gmail SMTP server.
+        Initialize the EmailSender by connecting to an SMTP server.
         
         :param sender: The sender's email address.
         :param password: The sender's password or app-specific password.
+        :param smtp_server: The address of the SMTP server (e.g., "smtp.example.com").
+        :param smtp_port: The port of the SMTP server. Default is 587.
+        :param use_tls: Whether to use TLS encryption. Default is True.
         :param debug: If True, email sending is simulated with logging.
         """
         self.sender = sender
@@ -56,13 +67,16 @@ class EmailSender:
         self.cc = None 
         self.errors = []
         try:
-            self.server = smtplib.SMTP("smtp.gmail.com", 587)
-            self.server.starttls()
+            self.server = smtplib.SMTP(smtp_server, smtp_port)
+            if use_tls:
+                self.server.starttls()
             self.server.login(self.sender, self.password)
             if self.debug:
-                print("[DEBUG] Connected to SMTP server and logged in successfully.")
+                logger.debug("Connected to SMTP server (%s:%s) and logged in successfully.", smtp_server, smtp_port)
         except Exception as e:
-            print(f"Error during SMTP connection or login: {e}")
+            msg = ("Error during SMTP connection or login. Please verify your SMTP settings, "
+                   "ensure that your sender credentials are correct, and check your network connectivity.")
+            logger.error("%s Exception: %s", msg, e)
             raise e
     
     def create_message(

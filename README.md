@@ -23,13 +23,19 @@ _No external dependencies are required!_
 
 ## Installation
 
-Clone the repository and integrate it into your project:
+You can install SMTP-Email-Sender using pip:
+
+```bash
+pip install smtp-email-sender
+```
+
+Alternatively, you can clone the repository and integrate it into your project:
 
 ```bash
 git clone https://github.com/ErhanTurker01/SMTP-Email-Sender.git
 ```
 
-Alternatively, you can copy the source file into your project directory.
+Or, you can copy the source file into your project directory.
 
 ## Usage
 

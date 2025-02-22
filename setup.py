@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="smtp-email-sender",
-    version="1.0.3",
+    version="1.0.4",
     description="A simple email sender package with SMTP",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
